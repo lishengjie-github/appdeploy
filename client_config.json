@@ -1,0 +1,20 @@
+{
+    "server_url": "http://127.0.0.1:61234",
+    "client_id": "auto",
+    "platform": "auto",
+    "install_path": {
+        "windows": "C:\\QtProgram",
+        "linux": "/opt/qtprogram"
+    },
+    "apps": [
+        {"name": "主程序", "windows": "testApp.exe", "linux": "myqtapp"},
+        {"name": "辅助工具", "windows": "helper.exe", "linux": "helper"}
+    ],
+    "cleanup_paths": [],
+    "heartbeat_interval": 30,
+    "poll_interval": 10,
+    "log_file": "./client.log",
+    "auto_start": true,
+    "max_retries": 3,
+    "retry_base_delay": 5
+}

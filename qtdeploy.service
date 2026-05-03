@@ -1,0 +1,17 @@
+[Unit]
+Description=软件部署客户端代理
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/swdeploy-client/client.py
+WorkingDirectory=/opt/swdeploy-client
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=swdeploy-client
+
+[Install]
+WantedBy=multi-user.target
