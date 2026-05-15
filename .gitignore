@@ -1,0 +1,35 @@
+# --- PyInstaller / 打包输出 ---
+/dist/
+/build/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- 便携嵌入式解释器（脚本生成，体积大）---
+linux/python/
+linux_arm/python/
+
+# --- Linux 离线 wheel（体积大）---
+linux/vendor/wheels/*.whl
+linux_arm/vendor/wheels/*.whl
+
+# --- 本机运行 / 调试产物 ---
+/client.exe
+/server.exe
+/deploy.db
+/client.log
+/server.log
+/client_crash.log
+
+# --- 其他二进制与本地工具副本 ---
+/VC_redist.x64.exe
+/pip.cmd
+/python.cmd
+
+# --- 服务端上传的安装包（运行时生成）---
+/packages/
+
+# --- Claude Code 本机权限配置（含本机路径）---
+.claude/settings.local.json

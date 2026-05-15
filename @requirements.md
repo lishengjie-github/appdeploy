@@ -23,7 +23,7 @@
 
 ## 环境约束
 - 纯内网环境，无互联网连接（所有依赖必须离线可用或提前内置）
-- 目标机器：共60台，其中一部分为 Windows 10/11，另一部分为 Linux（Ubuntu/CentOS 等）
+- 目标机器：超过100台，其中一部分为 Windows 10/11，另一部分为 Linux（Ubuntu/CentOS 等）
 - Qt程序分为两个独立包：Windows版（.exe + 依赖）、Linux版（可执行文件 + .so等）
 - 每台机器需要安装一个常驻客户端代理（Python脚本，可作为Windows服务或Linux systemd服务）
 

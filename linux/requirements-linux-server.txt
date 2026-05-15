@@ -1,0 +1,9 @@
+# Flask stack for offline install (pip download / pip install --no-index).
+# Regenerate wheels: python download_linux_offline_deps.py
+flask>=3.0.0,<4.0.0
+werkzeug>=3.0.0
+jinja2>=3.1.0
+markupsafe>=2.1.0
+itsdangerous>=2.1.0
+click>=8.1.0
+blinker>=1.6.0

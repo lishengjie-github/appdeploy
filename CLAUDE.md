@@ -13,11 +13,13 @@ server.py              # Flask server: API, web dashboard, SQLite DB
 client.py              # Cross-platform client agent (auto-detects OS)
 server_config.json     # Server configuration
 client_config.json     # Client configuration
-install_windows.bat    # NSSM-based Windows client service installer (interactive)
-install_linux.sh       # systemd client service installer (interactive)
-install_server.bat     # NSSM-based Windows server service installer
-install_server.sh      # systemd server service installer
-package_offline.bat    # Offline package builder (bundles Python + deps)
+install_cfg_client.py  # Shared install helper (called from Windows/Linux installers)
+
+windows/               # Windows NSSM installers, nssm downloaders, VC++ helpers
+linux/                 # x86_64 offline vendor/python + bundle/ + zip_root/ shell scripts
+linux_arm/             # AArch64 offline payloads (reuses linux/bundle/*.sh in release zips)
+tools/                 # Build-only helpers (e.g. print_dll_dir.py for PyInstaller VC++ DLLs)
+scripts/               # Packaging: zip bundles, Linux offline downloaders, package_deploy, package_offline
 ```
 
 ## Tech Stack
@@ -32,7 +34,7 @@ package_offline.bat    # Offline package builder (bundles Python + deps)
 - **Multi-app support**: Both server and client manage multiple applications via `apps` array in config. Each app has a name and platform-specific executable name. Deploy stops all apps, extracts, starts all apps.
 - **No backup**: Backup functionality has been removed.
 - **No auth**: API token removed for simplicity on intranet.
-- **Interactive install**: `install_windows.bat` and `install_linux.sh` prompt for server IP during installation and auto-update `client_config.json`.
+- **Interactive install**: `windows/install_windows.bat` and `linux/bundle/install_linux.sh` prompt for server IP during installation and auto-update `client_config.json`.
 - **Dark theme UI**: Server dashboard uses a dark theme with animations.
 
 ## Running

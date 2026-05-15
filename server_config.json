@@ -5,9 +5,23 @@
     "database": "./deploy.db",
     "max_concurrent": 10,
     "heartbeat_timeout": 90,
+    "products": [
+        {
+            "id": "TYPT",
+            "name": "推演平台"
+        }
+    ],
     "apps": [
-        {"name": "主程序", "windows": "myqtapp.exe", "linux": "myqtapp"},
-        {"name": "辅助工具", "windows": "helper.exe", "linux": "helper"}
+        {
+            "name": "主程序",
+            "windows": "myqtapp.exe",
+            "linux": "myqtapp"
+        },
+        {
+            "name": "辅助工具",
+            "windows": "helper.exe",
+            "linux": "helper"
+        }
     ],
     "cleanup_paths": []
 }

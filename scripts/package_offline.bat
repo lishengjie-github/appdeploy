@@ -1,7 +1,16 @@
 @echo off
 REM Must stay ASCII-only so cmd.exe parses correctly on Chinese Windows (GBK console).
+REM No pause: set NO_PAUSE=1 / NONINTERACTIVE=1, or: package_offline.bat nopause
 chcp 65001 >nul 2>&1
 setlocal enabledelayedexpansion
+
+if /i "%~1"=="nopause" set NO_PAUSE=1
+if /i "%~1"=="/nopause" set NO_PAUSE=1
+if "%NONINTERACTIVE%"=="1" set NO_PAUSE=1
+if defined CI set NO_PAUSE=1
+if defined GITHUB_ACTIONS set NO_PAUSE=1
+if defined GITLAB_CI set NO_PAUSE=1
+if defined RUNNER_OS set NO_PAUSE=1
 
 echo.
 echo  ============================================================
@@ -9,7 +18,8 @@ echo       Offline package builder (embedded Python + Flask)
 echo  ============================================================
 echo.
 
-set SCRIPT_DIR=%~dp0
+cd /d "%~dp0.."
+set "SCRIPT_DIR=%CD%\"
 set DIST_DIR=%SCRIPT_DIR%dist
 set PYTHON_VER=3.10.11
 REM Embedded zip must be placed manually (offline): python-embed.zip OR python-%PYTHON_VER%-embed-amd64.zip
@@ -18,27 +28,29 @@ where python >nul 2>nul
 if %ERRORLEVEL% neq 0 (
     echo  [ERROR] Need Python on this PC to build the offline bundle.
     echo  [INFO] Target machines will use the embedded Python inside the bundle.
-    pause
+    call :bp
     exit /b 1
 )
 for /f "tokens=2 delims= " %%v in ('python --version 2^>^&1') do set SYS_PY_VER=%%v
 echo  [OK] Host Python: %SYS_PY_VER%
 
 REM --- nssm.exe (optional): PATH, else download from nssm.cc ---
-if not exist "%SCRIPT_DIR%nssm.exe" (
+if not exist "%SCRIPT_DIR%nssm.exe" if not exist "%SCRIPT_DIR%windows\nssm.exe" (
     echo.
-    echo  [INFO] nssm.exe not in folder, searching PATH...
+    echo  [INFO] nssm.exe not in repo root or windows\, searching PATH...
     where nssm >nul 2>nul
     if %ERRORLEVEL% equ 0 (
-        for /f "tokens=*" %%i in ('where nssm') do copy "%%i" "%SCRIPT_DIR%nssm.exe" >nul
-        echo  [OK] Copied nssm.exe from PATH
+        for /f "tokens=*" %%i in ('where nssm') do copy "%%i" "%SCRIPT_DIR%windows\nssm.exe" >nul
+        echo  [OK] Copied nssm.exe to windows\
     ) else (
         echo  [..] Downloading NSSM 2.24 ^(HTTPS^)...
-        powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%download_nssm.ps1" "%SCRIPT_DIR%"
-        if exist "%SCRIPT_DIR%nssm.exe" (
-            echo  [OK] nssm.exe saved
+        powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%windows\download_nssm.ps1" "%SCRIPT_DIR%windows"
+        if exist "%SCRIPT_DIR%windows\nssm.exe" (
+            echo  [OK] nssm.exe saved to windows\
+        ) else if exist "%SCRIPT_DIR%nssm.exe" (
+            echo  [OK] nssm.exe at repo root
         ) else (
-            echo  [WARN] nssm.exe still missing; run download_nssm.bat or copy win64\nssm.exe manually
+            echo  [WARN] nssm.exe still missing; run windows\download_nssm.bat or copy win64\nssm.exe to windows\
         )
     )
 )
@@ -67,7 +79,7 @@ if exist "%SCRIPT_DIR%python-embed.zip" (
     echo         or python-embed.zip ^(same file, shorter name^)
     echo  [INFO] Get from python.org or mirrors, then re-run this script.
     rmdir /s /q "%TEMP_DIR%"
-    pause
+    call :bp
     exit /b 1
 )
 
@@ -100,7 +112,7 @@ if exist "%SCRIPT_DIR%get-pip.py" (
         echo  [ERROR] get-pip.py download failed
         echo  [INFO] Save manually as: %SCRIPT_DIR%get-pip.py from https://bootstrap.pypa.io/get-pip.py
         rmdir /s /q "%TEMP_DIR%"
-        pause
+        call :bp
         exit /b 1
     )
     copy "%GET_PIP_PY%" "%SCRIPT_DIR%get-pip.py" >nul
@@ -136,20 +148,27 @@ xcopy "%PYTHON_EXTRACT%\*" "%BUNDLE_DIR%\python\" /e /i /q >nul
 REM --- Server + client Windows (same root; shared embedded Python) ---
 copy "%SCRIPT_DIR%server.py" "%BUNDLE_DIR%\" >nul
 copy "%SCRIPT_DIR%server_config.json" "%BUNDLE_DIR%\" >nul
-copy "%SCRIPT_DIR%install_server.bat" "%BUNDLE_DIR%\" >nul
+copy "%SCRIPT_DIR%windows\install_server.bat" "%BUNDLE_DIR%\" >nul
 copy "%SCRIPT_DIR%client.py" "%BUNDLE_DIR%\" >nul
 copy "%SCRIPT_DIR%client_config.json" "%BUNDLE_DIR%\" >nul
-copy "%SCRIPT_DIR%install_windows.bat" "%BUNDLE_DIR%\" >nul
+copy "%SCRIPT_DIR%windows\install_windows.bat" "%BUNDLE_DIR%\" >nul
+copy "%SCRIPT_DIR%windows\uninstall_server.bat" "%BUNDLE_DIR%\" >nul
+copy "%SCRIPT_DIR%windows\uninstall_windows.bat" "%BUNDLE_DIR%\" >nul
+copy "%SCRIPT_DIR%windows\start_client.bat" "%BUNDLE_DIR%\" >nul
+copy "%SCRIPT_DIR%windows\start_server.bat" "%BUNDLE_DIR%\" >nul
 copy "%SCRIPT_DIR%install_cfg_client.py" "%BUNDLE_DIR%\" >nul
+if exist "%SCRIPT_DIR%dist\exe\server.exe" copy "%SCRIPT_DIR%dist\exe\server.exe" "%BUNDLE_DIR%\" >nul
+if exist "%SCRIPT_DIR%dist\exe\client.exe" copy "%SCRIPT_DIR%dist\exe\client.exe" "%BUNDLE_DIR%\" >nul
 
 REM --- Helpers ---
-copy "%SCRIPT_DIR%add_python_user_path.ps1" "%BUNDLE_DIR%\" >nul
-copy "%SCRIPT_DIR%python.cmd" "%BUNDLE_DIR%\" >nul
-copy "%SCRIPT_DIR%pip.cmd" "%BUNDLE_DIR%\" >nul
-copy "%SCRIPT_DIR%download_nssm.ps1" "%BUNDLE_DIR%\" >nul
-copy "%SCRIPT_DIR%download_nssm.bat" "%BUNDLE_DIR%\" >nul
+copy "%SCRIPT_DIR%windows\add_python_user_path.ps1" "%BUNDLE_DIR%\" >nul
+copy "%SCRIPT_DIR%windows\python.cmd" "%BUNDLE_DIR%\" >nul
+copy "%SCRIPT_DIR%windows\pip.cmd" "%BUNDLE_DIR%\" >nul
+copy "%SCRIPT_DIR%windows\download_nssm.ps1" "%BUNDLE_DIR%\" >nul
+copy "%SCRIPT_DIR%windows\download_nssm.bat" "%BUNDLE_DIR%\" >nul
 copy "%SCRIPT_DIR%download_python_embed.ps1" "%BUNDLE_DIR%\" >nul
 copy "%SCRIPT_DIR%download_get_pip.ps1" "%BUNDLE_DIR%\" >nul
+if exist "%SCRIPT_DIR%windows\nssm.exe" copy "%SCRIPT_DIR%windows\nssm.exe" "%BUNDLE_DIR%\" >nul
 if exist "%SCRIPT_DIR%nssm.exe" copy "%SCRIPT_DIR%nssm.exe" "%BUNDLE_DIR%\" >nul
 
 REM --- Clean up files that should NOT be in the bundle ---
@@ -164,7 +183,7 @@ if exist "%BUNDLE_DIR%\deploy.db" del /q "%BUNDLE_DIR%\deploy.db"
 
 if not exist "%BUNDLE_DIR%\python\python.exe" (
     echo  [ERROR] Missing python\python.exe - bundle incomplete
-    pause
+    call :bp
     exit /b 1
 )
 
@@ -179,11 +198,13 @@ echo SERVER:
 echo   1. Run install_server.bat ^(admin^)
 echo   2. Open http://THIS-PC-IP:61234
 echo   nssm: SoftwareDeployServer   Firewall: port 61234
+echo   Uninstall: uninstall_server.bat
 echo.
 echo WINDOWS CLIENT:
 echo   1. Run install_windows.bat ^(admin^)
 echo   2. Enter server IP when asked
 echo   nssm: SoftwareDeployClient
+echo   Uninstall: uninstall_windows.bat
 echo.
 echo Python: after install_*.bat, User PATH includes python\ ^(new CMD^).
 echo Or run python.cmd in this folder without PATH.
@@ -202,7 +223,10 @@ mkdir "%LINUX_DIR%"
 
 copy "%SCRIPT_DIR%client.py" "%LINUX_DIR%\" >nul
 copy "%SCRIPT_DIR%client_config.json" "%LINUX_DIR%\" >nul
-copy "%SCRIPT_DIR%install_linux.sh" "%LINUX_DIR%\" >nul
+copy "%SCRIPT_DIR%linux\bundle\install_linux.sh" "%LINUX_DIR%\" >nul
+copy "%SCRIPT_DIR%linux\bundle\uninstall_linux.sh" "%LINUX_DIR%\" >nul
+copy "%SCRIPT_DIR%linux\bundle\uninstall_server.sh" "%LINUX_DIR%\" >nul
+copy "%SCRIPT_DIR%linux\bundle\start_client.sh" "%LINUX_DIR%\" >nul
 
 (
 echo Linux client only ^(copy this subfolder to Linux machines^)
@@ -212,6 +236,7 @@ echo 1. sudo bash install_linux.sh
 echo 2. Enter server IP
 echo Requires: Python 3.8+, systemd
 echo systemctl: swdeploy-client
+echo Uninstall: sudo bash uninstall_linux.sh
 ) > "%LINUX_DIR%\README.txt"
 
 echo  [OK] client_linux subfolder done
@@ -225,4 +250,15 @@ echo     - install_server.bat / install_windows.bat ^(same folder, one python\^)
 echo     - client_linux\      Linux client scripts only
 echo  ============================================================
 echo.
+call :bp
+goto :EOF
+
+:bp
+if "%NO_PAUSE%"=="1" exit /b 0
+if "%NONINTERACTIVE%"=="1" exit /b 0
+if defined CI exit /b 0
+if defined GITHUB_ACTIONS exit /b 0
+if defined GITLAB_CI exit /b 0
+if defined RUNNER_OS exit /b 0
 pause
+exit /b 0

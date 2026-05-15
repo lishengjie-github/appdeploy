@@ -10,6 +10,7 @@
         {"name": "主程序", "windows": "testApp.exe", "linux": "myqtapp"},
         {"name": "辅助工具", "windows": "helper.exe", "linux": "helper"}
     ],
+    "products": [],
     "cleanup_paths": [],
     "heartbeat_interval": 30,
     "poll_interval": 10,

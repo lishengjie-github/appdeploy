@@ -1,0 +1,3 @@
+# Windows cmd.exe expects CRLF in .bat; LF-only breaks %VAR% parsing.
+*.bat text eol=crlf
+*.sh text eol=lf
